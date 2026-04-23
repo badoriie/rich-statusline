@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/badoriie/rich-statusline/compare/v1.0.0...v1.0.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* handle no-changes case in marketplace ref update job ([ce75c15](https://github.com/badoriie/rich-statusline/commit/ce75c159fc50cfa72b6b4cb9126ad2b9ca93f572))
+
 ## 1.0.0 (2026-04-23)
 
 

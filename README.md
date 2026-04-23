@@ -31,7 +31,7 @@ In Claude Code, add this repo as a marketplace, then install the plugin:
 /plugin install rich-statusline@badoriie
 ```
 
-Then run `/statusline-setup` to copy the script and configure Claude Code.
+Then ask Claude to "setup the statusline" — it will invoke the bundled skill to copy the script and configure `settings.json` automatically.
 
 ## Manual setup
 
@@ -46,7 +46,10 @@ chmod +x ~/.claude/statusline-command.sh
 Add to `~/.claude/settings.json`:
 ```json
 {
-  "statusline": "~/.claude/statusline-command.sh"
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline-command.sh"
+  }
 }
 ```
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/badoriie/rich-statusline/compare/v1.0.3...v1.0.4) (2026-04-23)
+
+
+### Bug Fixes
+
+* replace hardcoded version placeholder in manual setup with glob command ([03a9515](https://github.com/badoriie/rich-statusline/commit/03a9515ea9321852e84b92cfa2b12df0d7cc8386))
+
 ## [1.0.3](https://github.com/badoriie/rich-statusline/compare/v1.0.2...v1.0.3) (2026-04-23)
 
 

@@ -1,6 +1,6 @@
 # rich-statusline
 
-A rich 4-line status line for [Claude Code](https://claude.ai/code) that shows everything you need at a glance after each response.
+A rich 5-line status line for [Claude Code](https://claude.ai/code) that shows everything you need at a glance after each response.
 
 ## What it shows
 

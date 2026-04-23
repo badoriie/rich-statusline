@@ -11,7 +11,7 @@
     {
       "name": "rich-statusline",
       "version": "1.0.3",
-      "description": "Rich 4-line Claude Code status line showing cwd, git branch, model, effort, context usage, cache savings, cost, session duration, and rate limits.",
+      "description": "Rich 5-line Claude Code status line showing cwd, git branch, model, effort, context usage, cache savings, cost, session duration, and rate limits.",
       "source": "./",
       "ref": "v1.0.3"
     }

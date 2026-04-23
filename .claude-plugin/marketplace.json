@@ -1,0 +1,18 @@
+{
+  "name": "badoriie",
+  "owner": {
+    "name": "badoriie"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by badoriie",
+    "homepage": "https://github.com/badoriie"
+  },
+  "plugins": [
+    {
+      "name": "rich-statusline",
+      "version": "1.0.0",
+      "description": "Rich 4-line Claude Code status line showing cwd, git branch, model, effort, context usage, cache savings, cost, session duration, and rate limits.",
+      "source": "./"
+    }
+  ]
+}

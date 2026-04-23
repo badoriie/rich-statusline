@@ -24,8 +24,11 @@ cost: $0.031 (total: $1.240) │ session: 12m30s │ lines: +201 / -145
 
 ## Installation
 
+In Claude Code, add this repo as a marketplace, then install the plugin:
+
 ```
-/plugin install rich-statusline
+/plugin marketplace add badoriie/rich-statusline
+/plugin install rich-statusline@badoriie
 ```
 
 Then run `/statusline-setup` to copy the script and configure Claude Code.

@@ -6,12 +6,13 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   cat <<EOF
 Usage: statusline-command.sh [--help]
 
-Rich Claude Code status line — 3 lines.
+Rich Claude Code status line — 5 lines.
 
 Line 1  identity:   cwd  git-branch  [style if non-default]
 Line 2  model:      model  effort  version  id: <full session id>
-Line 3  session:    ctx used/max  output tokens  cache hits  cost  duration  lines +/-
-Line 4  limits:     5-hour rate  7-day rate  current time
+Line 3  context:    ctx used/max  output tokens  cache hits + savings
+Line 4  session:    cost  duration  lines +/-
+Line 5  limits:     5-hour rate  7-day rate
 Warning:            exceeds-200k flag shown in red when set
 
 JSON fields used:

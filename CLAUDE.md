@@ -12,22 +12,18 @@ This is a static Bash plugin — no build, compile, or install step required. Th
 
 ## Installation (for local development / testing changes)
 
-```bash
-# Copy the script to the Claude config directory
-cp scripts/statusline-command.sh ~/.claude/statusline-command.sh
-chmod +x ~/.claude/statusline-command.sh
+Point `settings.json` directly at the script in the repo — no copying needed:
 
-# Ensure ~/.claude/settings.json contains:
-# {
-#   "statusLine": {
-#     "type": "command",
-#     "command": "~/.claude/statusline-command.sh"
-#   }
-# }
-# Note: use camelCase "statusLine" and the object form with "type" and "command"
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/path/to/rich-statusline/scripts/statusline-command.sh"
+  }
+}
 ```
 
-After editing `statusline-command.sh`, re-copy it to `~/.claude/` to test changes live in a Claude Code session.
+Replace `/path/to/rich-statusline` with the absolute path to your local clone. Changes to `scripts/statusline-command.sh` take effect immediately on the next Claude Code response.
 
 ## Architecture
 
@@ -37,7 +33,7 @@ All logic lives in one file: `scripts/statusline-command.sh`.
 - Claude Code invokes the script after each response, passing session JSON on stdin
 - The script uses `jq` to extract fields (model, tokens, costs, cache hits, rate limits, etc.)
 - Helper functions format values (e.g., `pct_color` for color-coded percentages, `fmt_tokens` for human-readable token counts)
-- Output is 4–5 ANSI-colored lines written to stdout
+- Output is up to 5 ANSI-colored lines written to stdout (lines are omitted when their data is absent)
 - Cumulative cost and cache savings are tracked per-session in `~/.claude/costs/` and `~/.claude/cache_savings/` (flat files named by session ID)
 
 **Output lines:**
@@ -51,7 +47,7 @@ All logic lives in one file: `scripts/statusline-command.sh`.
 
 - `.claude-plugin/plugin.json` — plugin identity (name, author, description)
 - `.claude-plugin/marketplace.json` — marketplace registry; enables `/plugin marketplace add badoriie/rich-statusline`
-- `skills/statusline-setup/SKILL.md` — a Claude Code skill that automates copying the script and setting `settings.json`
+- `skills/statusline-setup/SKILL.md` — a Claude Code skill that configures `settings.json` to point at the plugin's script
 
 ## Releasing a New Version
 
@@ -73,10 +69,24 @@ Releases are fully automated via release-please (`.github/workflows/release.yml`
 
 ## Making Changes
 
-Edit `scripts/statusline-command.sh` directly. To test: copy it to `~/.claude/statusline-command.sh` and trigger a Claude Code response. The script can also be tested manually:
+Edit `scripts/statusline-command.sh` directly. Since `settings.json` points at the repo, changes are live immediately — just trigger a Claude Code response. The script can also be tested manually:
 
 ```bash
 echo '{"your":"json"}' | bash scripts/statusline-command.sh
 ```
 
 Pass a representative Claude Code session JSON payload on stdin to verify formatting without a full Claude session.
+
+## Pre-commit Hook
+
+A pre-commit hook in `.githooks/pre-commit` runs three checks on every commit:
+
+1. **Bash syntax** — `bash -n scripts/statusline-command.sh`
+2. **jq expression syntax** — validates every `jq` filter in the script
+3. **Line count consistency** — verifies the count in the script help text matches `README.md`, `plugin.json`, and `marketplace.json`
+
+Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```

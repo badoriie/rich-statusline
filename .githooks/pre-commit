@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Pre-commit checks for rich-statusline
+set -euo pipefail
+
+SCRIPT="scripts/statusline-command.sh"
+PASS=true
+ERRORS=()
+
+# ── 1. Bash syntax ────────────────────────────────────────────────────────────
+if bash -n "$SCRIPT" 2>/dev/null; then
+  echo "✓ bash syntax"
+else
+  err=$(bash -n "$SCRIPT" 2>&1)
+  ERRORS+=("bash syntax: $err")
+  PASS=false
+fi
+
+# ── 2. jq expression syntax ───────────────────────────────────────────────────
+jq_errors=()
+while IFS= read -r filter; do
+  [ -z "$filter" ] && continue
+  if ! echo 'null' | jq "$filter" >/dev/null 2>&1; then
+    jq_errors+=("$filter")
+  fi
+done < <(
+  grep -Eo "jq -[a-zA-Z ]+ '[^']+'" "$SCRIPT" \
+    | grep -oE "'[^']+'" \
+    | tr -d "'"
+)
+
+if [ "${#jq_errors[@]}" -eq 0 ]; then
+  echo "✓ jq expressions"
+else
+  for f in "${jq_errors[@]}"; do
+    ERRORS+=("invalid jq filter: $f")
+  done
+  PASS=false
+fi
+
+# ── 3. Line count consistency ─────────────────────────────────────────────────
+canonical=$(grep -Eo 'status line — [0-9]+ lines' "$SCRIPT" | grep -Eo '[0-9]+' | head -1)
+
+if [ -z "$canonical" ]; then
+  ERRORS+=("line count: cannot find 'status line — N lines' in $SCRIPT help text")
+  PASS=false
+else
+  check_count() {
+    local file="$1" pattern="$2" label="$3"
+    if ! grep -qE "$pattern" "$file"; then
+      ERRORS+=("line count: '$file' does not match '$pattern' (expected ${canonical}-line reference)")
+      PASS=false
+    fi
+  }
+  check_count "README.md"                      "${canonical}-line"  "README.md"
+  check_count ".claude-plugin/plugin.json"     "${canonical}-line"  "plugin.json"
+  check_count ".claude-plugin/marketplace.json" "${canonical}-line" "marketplace.json"
+  check_count "CLAUDE.md"                      "${canonical}"       "CLAUDE.md"
+
+  if [ "$PASS" = true ]; then
+    echo "✓ line count consistent (${canonical} lines)"
+  fi
+fi
+
+# ── Result ────────────────────────────────────────────────────────────────────
+if [ "$PASS" = false ]; then
+  echo ""
+  echo "Pre-commit failed:"
+  for e in "${ERRORS[@]}"; do
+    echo "  ✗ $e"
+  done
+  exit 1
+fi

@@ -6,34 +6,28 @@ allowed-tools: [Read, Edit, Bash, Write]
 
 # Rich Statusline Setup
 
-Install the bundled `statusline-command.sh` script and configure Claude Code to use it.
+Configure Claude Code to use the bundled `statusline-command.sh` script directly from the plugin install path — no copying needed.
 
 ## Steps
 
-1. **Find the skill directory** — this SKILL.md lives inside the plugin install path. Resolve its absolute directory:
+1. **Find the script path** — use the Bash tool to locate the installed script:
    ```sh
-   SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
+   ls ~/.claude/plugins/cache/badoriie/rich-statusline/*/scripts/statusline-command.sh
    ```
-   The script is at `<skill-dir>/../../scripts/statusline-command.sh`.
+   Use the resulting absolute path in the next step.
 
-2. **Copy the script** to `~/.claude/statusline-command.sh` and make it executable:
-   ```sh
-   cp "<skill-dir>/../../scripts/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
-   chmod +x "$HOME/.claude/statusline-command.sh"
-   ```
-
-3. **Wire it into settings** — read `~/.claude/settings.json`, then set the `statusLine` key (camelCase, object form):
+2. **Wire it into settings** — read `~/.claude/settings.json`, then set the `statusLine` key (camelCase, object form) pointing at the resolved absolute path:
    ```json
    {
      "statusLine": {
        "type": "command",
-       "command": "~/.claude/statusline-command.sh"
+       "command": "/absolute/path/to/plugin/scripts/statusline-command.sh"
      }
    }
    ```
    Use the Edit tool to update the file. If the file doesn't exist yet, create it with just this key.
 
-4. **Confirm** by telling the user the script was copied to `~/.claude/statusline-command.sh` and settings were updated. Remind them to start a new Claude Code session for the statusline to appear.
+3. **Confirm** by telling the user the `statusLine` setting was updated to point at the plugin path. Remind them to start a new Claude Code session for the statusline to appear.
 
 ## Notes
 

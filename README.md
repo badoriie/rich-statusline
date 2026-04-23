@@ -35,13 +35,17 @@ Then ask Claude to "setup the statusline" — it will invoke the bundled skill t
 
 ## Manual setup
 
-Find the installed plugin path (typically `~/.claude/plugins/cache/badoriie/rich-statusline/<version>/`) and add to `~/.claude/settings.json`:
+Find the script path, then add it to `~/.claude/settings.json`:
+
+```sh
+ls ~/.claude/plugins/cache/badoriie/rich-statusline/*/scripts/statusline-command.sh
+```
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "/Users/<you>/.claude/plugins/cache/badoriie/rich-statusline/<version>/scripts/statusline-command.sh"
+    "command": "/absolute/path/from/above"
   }
 }
 ```

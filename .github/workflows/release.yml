@@ -39,5 +39,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .claude-plugin/marketplace.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: update marketplace ref to ${{ needs.release-please.outputs.tag_name }} [skip ci]"
           git push

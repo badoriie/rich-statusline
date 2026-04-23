@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/badoriie/rich-statusline/compare/v1.0.2...v1.0.3) (2026-04-23)
+
+
+### Bug Fixes
+
+* configure release-please to read config and update extra-files ([dd55515](https://github.com/badoriie/rich-statusline/commit/dd55515fb94391e72ae2a2a43e7edd0c101e3d6c))
+
 ## [1.0.2](https://github.com/badoriie/rich-statusline/compare/v1.0.1...v1.0.2) (2026-04-23)
 
 

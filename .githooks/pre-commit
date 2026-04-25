@@ -45,16 +45,16 @@ if [ -z "$canonical" ]; then
   PASS=false
 else
   check_count() {
-    local file="$1" pattern="$2" label="$3"
+    local file="$1" pattern="$2"
     if ! grep -qE "$pattern" "$file"; then
       ERRORS+=("line count: '$file' does not match '$pattern' (expected ${canonical}-line reference)")
       PASS=false
     fi
   }
-  check_count "README.md"                      "${canonical}-line"  "README.md"
-  check_count ".claude-plugin/plugin.json"     "${canonical}-line"  "plugin.json"
-  check_count ".claude-plugin/marketplace.json" "${canonical}-line" "marketplace.json"
-  check_count "CLAUDE.md"                      "${canonical}"       "CLAUDE.md"
+  check_count "README.md"                       "${canonical}-line"
+  check_count ".claude-plugin/plugin.json"      "${canonical}-line"
+  check_count ".claude-plugin/marketplace.json" "${canonical}-line"
+  check_count "CLAUDE.md"                       "${canonical}"
 
   if [ "$PASS" = true ]; then
     echo "✓ line count consistent (${canonical} lines)"

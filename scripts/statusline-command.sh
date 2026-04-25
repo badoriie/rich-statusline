@@ -44,7 +44,6 @@ input=$(cat)
 ESC=$'\033'
 RESET="${ESC}[0m"
 BOLD="${ESC}[1m"
-DIM="${ESC}[2m"
 CYAN="${ESC}[36m"
 YELLOW="${ESC}[33m"
 MAGENTA="${ESC}[35m"
@@ -61,7 +60,7 @@ model=$(echo "$input"        | jq -r '.model.display_name // ""')
 version=$(echo "$input"      | jq -r '.version // ""')
 output_style=$(echo "$input" | jq -r '.output_style.name // ""')
 effort=$(jq -r '.effortLevel // "auto"' "$HOME/.claude/settings.json" 2>/dev/null)
-[ -z "$effort" ] && effort="auto"
+[[ -z "$effort" ]] && effort="auto"
 
 ctx=$(echo "$input"          | jq -r '.context_window.used_percentage // ""')
 ctx_max=$(echo "$input"      | jq -r '.context_window.context_window_size // ""')
@@ -84,7 +83,7 @@ seven_reset=$(echo "$input"  | jq -r '.rate_limits.seven_day.resets_at // ""')
 
 # Derive used tokens from percentage × window size
 ctx_used=""
-if [ -n "$ctx" ] && [ -n "$ctx_max" ] && [[ "$ctx_max" =~ ^[0-9]+$ ]]; then
+if [[ -n "$ctx" && -n "$ctx_max" ]] && [[ "$ctx_max" =~ ^[0-9]+$ ]]; then
   ctx_used=$(awk "BEGIN{printf \"%d\", $ctx_max * $ctx / 100}")
 fi
 
@@ -94,11 +93,12 @@ short_cwd="${cwd/#$home/\~}"
 
 # Color for a percentage value: green < 50, yellow < 80, red >= 80
 pct_color() {
+  local input="$1"
   local val
-  val=$(printf '%.0f' "$1" 2>/dev/null) || return
-  if   [ "$val" -lt 50 ]; then printf '%s' "$GREEN"
-  elif [ "$val" -lt 80 ]; then printf '%s' "$YELLOW"
-  else                         printf '%s' "$RED"
+  val=$(printf '%.0f' "$input" 2>/dev/null) || return
+  if   [[ "$val" -lt 50 ]]; then printf '%s' "$GREEN"
+  elif [[ "$val" -lt 80 ]]; then printf '%s' "$YELLOW"
+  else                           printf '%s' "$RED"
   fi
 }
 
@@ -106,9 +106,9 @@ pct_color() {
 fmt_tokens() {
   local n="$1"
   [[ "$n" =~ ^[0-9]+$ ]] || return
-  if   [ "$n" -ge 1000000 ]; then awk "BEGIN{printf \"%.1fM\", $n/1000000}"
-  elif [ "$n" -ge 1000 ];    then awk "BEGIN{printf \"%.1fk\", $n/1000}"
-  else                            printf '%d' "$n"
+  if   [[ "$n" -ge 1000000 ]]; then awk "BEGIN{printf \"%.1fM\", $n/1000000}"
+  elif [[ "$n" -ge 1000 ]];    then awk "BEGIN{printf \"%.1fk\", $n/1000}"
+  else                              printf '%d' "$n"
   fi
 }
 
@@ -120,7 +120,7 @@ if [[ "$total_dur_ms" =~ ^[0-9]+$ ]]; then
   hrs=$(( elapsed / 3600 ))
   mins=$(( (elapsed % 3600) / 60 ))
   secs=$(( elapsed % 60 ))
-  if [ "$hrs" -gt 0 ]; then
+  if [[ "$hrs" -gt 0 ]]; then
     dur_fmt=$(printf '%dh%02dm' "$hrs" "$mins")
   else
     dur_fmt=$(printf '%dm%02ds' "$mins" "$secs")
@@ -132,16 +132,16 @@ git_seg=""
 if cd "$cwd" 2>/dev/null && git rev-parse --is-inside-work-tree --no-optional-locks >/dev/null 2>&1; then
   branch=$(git --no-optional-locks symbolic-ref --short HEAD 2>/dev/null \
            || git --no-optional-locks rev-parse --short HEAD 2>/dev/null)
-  if [ -n "$branch" ]; then
+  if [[ -n "$branch" ]]; then
     # Truncate long branch names to 25 characters
-    if [ "${#branch}" -gt 25 ]; then
+    if [[ "${#branch}" -gt 25 ]]; then
       branch="${branch:0:24}…"
     fi
     dirty=""
     if ! git --no-optional-locks diff --quiet 2>/dev/null || \
        ! git --no-optional-locks diff --cached --quiet 2>/dev/null; then
       dirty=" ${YELLOW}●${RESET}"
-    elif [ -n "$(git --no-optional-locks ls-files --others --exclude-standard 2>/dev/null)" ]; then
+    elif [[ -n "$(git --no-optional-locks ls-files --others --exclude-standard 2>/dev/null)" ]]; then
       dirty=" ${GREY}○${RESET}"
     fi
     git_seg="  ${CYAN}${branch}${RESET}${dirty}"
@@ -156,7 +156,7 @@ DIV="${GREY} │ ${RESET}"
 # ── Line 1: Identity ──────────────────────────────────────────────────────────
 # ~/path  branch ●  [style if non-default]
 style_part=""
-[ -n "$output_style" ] && [ "$output_style" != "default" ] && \
+[[ -n "$output_style" && "$output_style" != "default" ]] && \
   style_part="${DIV}${WHITE}style: ${RESET}${output_style}"
 
 printf '%s%s%s%s%s\n' \
@@ -177,7 +177,7 @@ esac
 effort_part="${DIV}${WHITE}effort: ${effort_color}${effort}${RESET}"
 
 session_id_part=""
-[ -n "$session_id" ] && session_id_part="${DIV}${GREY}id: ${RESET}${session_id}"
+[[ -n "$session_id" ]] && session_id_part="${DIV}${GREY}id: ${RESET}${session_id}"
 
 printf '%s%s%s%s%s%s\n' \
   "${YELLOW}" "$model" "${RESET}" \
@@ -188,66 +188,66 @@ printf '%s%s%s%s%s%s\n' \
 # ── Line 3: Context, tokens & cache ──────────────────────────────────────────
 # context: 34k/200k  ⚠ 72% │ tokens out: 22k │ cache hit: 54k  cache write: 180
 ctx_part=""
-if [ -n "$ctx" ]; then
+if [[ -n "$ctx" ]]; then
   color=$(pct_color "$ctx")
   used_fmt=$(fmt_tokens "$ctx_used")
   max_fmt=$(fmt_tokens "$ctx_max")
-  if [ -n "$used_fmt" ] && [ -n "$max_fmt" ]; then
+  if [[ -n "$used_fmt" && -n "$max_fmt" ]]; then
     ctx_part="${WHITE}context: ${color}${used_fmt}/${max_fmt}${RESET}"
   else
     ctx_part="${WHITE}context: ${color}$(printf '%.0f' "$ctx")%${RESET}"
   fi
-  [ "$exceeds" = "true" ] && ctx_part="${ctx_part} ${RED}${BOLD}⚠ exceeds 200k${RESET}"
-  if [[ "$ctx" =~ ^[0-9]+$ ]] && [ "$ctx" -ge 80 ]; then
+  [[ "$exceeds" = "true" ]] && ctx_part="${ctx_part} ${RED}${BOLD}⚠ exceeds 200k${RESET}"
+  if [[ "$ctx" =~ ^[0-9]+$ ]] && [[ "$ctx" -ge 80 ]]; then
     ctx_part="${ctx_part} ${BOLD}${RED}⚠ run /compact${RESET}"
   fi
 fi
 
 out_part=""
 out_fmt=$(fmt_tokens "$ctx_out")
-[ -n "$out_fmt" ] && out_part="${WHITE}tokens out: ${BLUE}${out_fmt}${RESET}"
+[[ -n "$out_fmt" ]] && out_part="${WHITE}tokens out: ${BLUE}${out_fmt}${RESET}"
 
 cache_part=""
 cr_fmt=$(fmt_tokens "$ctx_cache_read")
 cw_fmt=$(fmt_tokens "$ctx_cache_write")
-if [ -n "$cr_fmt" ] || [ -n "$cw_fmt" ]; then
+if [[ -n "$cr_fmt" || -n "$cw_fmt" ]]; then
   cache_parts=""
-  if [ -n "$cr_fmt" ]; then
+  if [[ -n "$cr_fmt" ]]; then
     saved_str=""
     if [[ "$ctx_cache_read" =~ ^[0-9]+$ ]]; then
       session_savings=$(awk "BEGIN{printf \"%.6f\", $ctx_cache_read * 2.70 / 1000000}")
       savings_dir="$HOME/.claude/cache_savings"
       mkdir -p "$savings_dir"
-      [ -n "$session_id" ] && printf '%s' "$session_savings" > "${savings_dir}/${session_id//[^a-zA-Z0-9_-]/}"
+      [[ -n "$session_id" ]] && printf '%s' "$session_savings" > "${savings_dir}/${session_id//[^a-zA-Z0-9_-]/}"
       total_savings=$(awk '{s+=$1} END{printf "%.4f", s+0}' "${savings_dir}"/* 2>/dev/null)
       saved_str=" ${WHITE}saved: ${GREEN}\$$(printf '%.4f' "$session_savings")${RESET}"
-      [ -n "$total_savings" ] && saved_str="${saved_str} ${WHITE}(total: ${GREEN}\$${total_savings}${WHITE})${RESET}"
+      [[ -n "$total_savings" ]] && saved_str="${saved_str} ${WHITE}(total: ${GREEN}\$${total_savings}${WHITE})${RESET}"
     fi
     cache_parts="${WHITE}cache hit: ${GREEN}${cr_fmt}${RESET}${saved_str}"
   fi
-  [ -n "$cw_fmt" ] && cache_parts="${cache_parts} ${WHITE}cache write: ${GREY}${cw_fmt}${RESET}"
+  [[ -n "$cw_fmt" ]] && cache_parts="${cache_parts} ${WHITE}cache write: ${GREY}${cw_fmt}${RESET}"
   cache_part="$cache_parts"
 fi
 
 line2_parts=()
-[ -n "$ctx_part"   ] && line2_parts+=("$ctx_part")
-[ -n "$out_part"   ] && line2_parts+=("$out_part")
-[ -n "$cache_part" ] && line2_parts+=("$cache_part")
+[[ -n "$ctx_part"   ]] && line2_parts+=("$ctx_part")
+[[ -n "$out_part"   ]] && line2_parts+=("$out_part")
+[[ -n "$cache_part" ]] && line2_parts+=("$cache_part")
 
 line2=""
-for part in "${line2_parts[@]}"; do [ -n "$line2" ] && line2+="$DIV"; line2+="$part"; done
-[ -n "$line2" ] && printf '%s\n' "$line2"
+for part in "${line2_parts[@]}"; do [[ -n "$line2" ]] && line2+="$DIV"; line2+="$part"; done
+[[ -n "$line2" ]] && printf '%s\n' "$line2"
 
 # ── Line 3: Cost, session & edits ─────────────────────────────────────────────
 # cost: $0.978 (total: $3.241) │ session: 12m30s │ lines: +201 / -145
 cost_part=""
-if [ -n "$cost" ]; then
+if [[ -n "$cost" ]]; then
   costs_dir="$HOME/.claude/costs"
   mkdir -p "$costs_dir"
-  [ -n "$session_id" ] && printf '%s' "$cost" > "${costs_dir}/${session_id//[^a-zA-Z0-9_-]/}"
+  [[ -n "$session_id" ]] && printf '%s' "$cost" > "${costs_dir}/${session_id//[^a-zA-Z0-9_-]/}"
   total_cost=$(awk '{s+=$1} END{printf "%.3f", s+0}' "${costs_dir}"/* 2>/dev/null)
   cost_part="${WHITE}cost: ${RESET}\$$(printf '%.3f' "$cost")"
-  [ -n "$total_cost" ] && cost_part="${cost_part} ${WHITE}(total: ${RESET}\$${total_cost}${WHITE})${RESET}"
+  [[ -n "$total_cost" ]] && cost_part="${cost_part} ${WHITE}(total: ${RESET}\$${total_cost}${WHITE})${RESET}"
 fi
 
 api_time_part=""
@@ -256,7 +256,7 @@ if [[ "$api_call_ms" =~ ^[0-9]+$ ]]; then
   api_hrs=$(( api_secs / 3600 ))
   api_mins=$(( (api_secs % 3600) / 60 ))
   api_s=$(( api_secs % 60 ))
-  if [ "$api_hrs" -gt 0 ]; then
+  if [[ "$api_hrs" -gt 0 ]]; then
     api_time_fmt=$(printf '%dh%02dm' "$api_hrs" "$api_mins")
   else
     api_time_fmt=$(printf '%dm%02ds' "$api_mins" "$api_s")
@@ -265,9 +265,9 @@ if [[ "$api_call_ms" =~ ^[0-9]+$ ]]; then
 fi
 
 dur_part=""
-if [ -n "$dur_fmt" ]; then
+if [[ -n "$dur_fmt" ]]; then
   dur_part="${WHITE}session: ${RESET}${dur_fmt}"
-  [ -n "$api_time_part" ] && dur_part="${dur_part} ${GREY}(${RESET}${api_time_part}${GREY})${RESET}"
+  [[ -n "$api_time_part" ]] && dur_part="${dur_part} ${GREY}(${RESET}${api_time_part}${GREY})${RESET}"
 fi
 
 lines_part=""
@@ -277,13 +277,13 @@ if [[ "$lines_added" =~ ^[0-9]+$ ]] || [[ "$lines_removed" =~ ^[0-9]+$ ]]; then
 fi
 
 line3_parts=()
-[ -n "$cost_part"  ] && line3_parts+=("$cost_part")
-[ -n "$dur_part"   ] && line3_parts+=("$dur_part")
-[ -n "$lines_part" ] && line3_parts+=("$lines_part")
+[[ -n "$cost_part"  ]] && line3_parts+=("$cost_part")
+[[ -n "$dur_part"   ]] && line3_parts+=("$dur_part")
+[[ -n "$lines_part" ]] && line3_parts+=("$lines_part")
 
 line3=""
-for part in "${line3_parts[@]}"; do [ -n "$line3" ] && line3+="$DIV"; line3+="$part"; done
-[ -n "$line3" ] && printf '%s\n' "$line3"
+for part in "${line3_parts[@]}"; do [[ -n "$line3" ]] && line3+="$DIV"; line3+="$part"; done
+[[ -n "$line3" ]] && printf '%s\n' "$line3"
 
 # ── Line 4: Rate limits ───────────────────────────────────────────────────────
 # 5h limit: 17%  resets in 2h30m (14:32) │ 7d limit: 27%  resets in 3d14h (19-04)
@@ -294,22 +294,22 @@ fmt_remaining() {
   local days=$(( secs / 86400 ))
   local hrs=$(( (secs % 86400) / 3600 ))
   local mins=$(( (secs % 3600) / 60 ))
-  if   [ "$days" -gt 0 ]; then printf '%dd%02dh' "$days" "$hrs"
-  elif [ "$hrs"  -gt 0 ]; then printf '%dh%02dm' "$hrs"  "$mins"
-  else                         printf '%dm'       "$mins"
+  if   [[ "$days" -gt 0 ]]; then printf '%dd%02dh' "$days" "$hrs"
+  elif [[ "$hrs"  -gt 0 ]]; then printf '%dh%02dm' "$hrs"  "$mins"
+  else                           printf '%dm'       "$mins"
   fi
 }
 
 now_ts=$(date +%s)
 
 five_part=""
-if [ -n "$five_pct" ]; then
+if [[ -n "$five_pct" ]]; then
   color=$(pct_color "$five_pct")
   remaining_str=""
   if [[ "$five_reset" =~ ^[0-9]+$ ]]; then
     secs_left=$(( five_reset - now_ts ))
     exact=$(date -r "$five_reset" '+%H:%M' 2>/dev/null)
-    if [ "$secs_left" -gt 0 ]; then
+    if [[ "$secs_left" -gt 0 ]]; then
       remaining_str=" ${WHITE}resets in ${RESET}$(fmt_remaining "$secs_left") (${exact})${RESET}"
     fi
   fi
@@ -317,13 +317,13 @@ if [ -n "$five_pct" ]; then
 fi
 
 seven_part=""
-if [ -n "$seven_pct" ]; then
+if [[ -n "$seven_pct" ]]; then
   color=$(pct_color "$seven_pct")
   remaining_str=""
   if [[ "$seven_reset" =~ ^[0-9]+$ ]]; then
     secs_left=$(( seven_reset - now_ts ))
     exact=$(date -r "$seven_reset" '+%d-%m %H:%M' 2>/dev/null)
-    if [ "$secs_left" -gt 0 ]; then
+    if [[ "$secs_left" -gt 0 ]]; then
       remaining_str=" ${WHITE}resets in ${RESET}$(fmt_remaining "$secs_left") (${exact})${RESET}"
     fi
   fi
@@ -331,12 +331,12 @@ if [ -n "$seven_pct" ]; then
 fi
 
 line4_parts=()
-[ -n "$five_part"  ] && line4_parts+=("$five_part")
-[ -n "$seven_part" ] && line4_parts+=("$seven_part")
+[[ -n "$five_part"  ]] && line4_parts+=("$five_part")
+[[ -n "$seven_part" ]] && line4_parts+=("$seven_part")
 
 line4=""
 for part in "${line4_parts[@]}"; do
-  [ -n "$line4" ] && line4+="$DIV"
+  [[ -n "$line4" ]] && line4+="$DIV"
   line4+="$part"
 done
-[ -n "$line4" ] && printf '%s\n' "$line4"
+[[ -n "$line4" ]] && printf '%s\n' "$line4"

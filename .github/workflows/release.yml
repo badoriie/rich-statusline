@@ -5,13 +5,12 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -26,20 +25,25 @@ jobs:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
       - name: Update marketplace.json ref to new tag
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          TAG="${{ needs.release-please.outputs.tag_name }}"
           jq --arg ref "$TAG" '.plugins[0].ref = $ref' .claude-plugin/marketplace.json > tmp.json
           mv tmp.json .claude-plugin/marketplace.json
       - name: Commit and push
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .claude-plugin/marketplace.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore: update marketplace ref to ${{ needs.release-please.outputs.tag_name }} [skip ci]"
+          git commit -m "chore: update marketplace ref to ${TAG} [skip ci]"
           git push

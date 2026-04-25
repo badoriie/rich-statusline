@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/badoriie/rich-statusline/compare/v1.0.4...v1.0.5) (2026-04-25)
+
+
+### Bug Fixes
+
+* resolve all SonarCloud issues on main branch ([#6](https://github.com/badoriie/rich-statusline/issues/6)) ([9f30fbf](https://github.com/badoriie/rich-statusline/commit/9f30fbf5d589fed83fe62b2cde549a8b3eb14725))
+
 ## [1.0.4](https://github.com/badoriie/rich-statusline/compare/v1.0.3...v1.0.4) (2026-04-23)
 
 

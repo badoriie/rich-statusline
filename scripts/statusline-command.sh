@@ -10,10 +10,10 @@ Rich Claude Code status line — 5 lines.
 
 Line 1  identity:   cwd  git-branch  [style if non-default]
 Line 2  model:      model  effort  version  id: <full session id>
-Line 3  context:    ctx used/max  output tokens  cache hits + savings
-Line 4  session:    cost  duration  lines +/-
+Line 3  context:    ctx used/max  input tokens  output tokens  cache hits + savings
+Line 4  session:    cost (total since <date>)  duration  lines +/-
 Line 5  limits:     5-hour rate  7-day rate
-Warning:            exceeds-200k flag shown in red when set
+Warning:            context >= 85% shown in red with /compact prompt
 
 JSON fields used:
   workspace.current_dir | cwd                      Working directory
@@ -24,9 +24,9 @@ JSON fields used:
   context_window.used_percentage                    Context usage (%)
   context_window.context_window_size                Max context tokens
   context_window.total_output_tokens                Total output tokens generated
+  context_window.current_usage.input_tokens         Non-cached input tokens
   context_window.current_usage.cache_read_input_tokens   Cache hits (tokens)
   context_window.current_usage.cache_creation_input_tokens Cache writes (tokens)
-  exceeds_200k_tokens                               Over-limit warning flag
   cost.total_cost_usd                               Session cost (USD)
   cost.total_lines_added                            Lines added this session
   cost.total_lines_removed                          Lines removed this session
@@ -65,9 +65,9 @@ effort=$(jq -r '.effortLevel // "auto"' "$HOME/.claude/settings.json" 2>/dev/nul
 ctx=$(echo "$input"          | jq -r '.context_window.used_percentage // ""')
 ctx_max=$(echo "$input"      | jq -r '.context_window.context_window_size // ""')
 ctx_out=$(echo "$input"      | jq -r '.context_window.total_output_tokens // ""')
-ctx_cache_read=$(echo "$input" | jq -r '.context_window.current_usage.cache_read_input_tokens // ""')
+ctx_cache_read=$(echo "$input"  | jq -r '.context_window.current_usage.cache_read_input_tokens // ""')
 ctx_cache_write=$(echo "$input" | jq -r '.context_window.current_usage.cache_creation_input_tokens // ""')
-exceeds=$(echo "$input"      | jq -r '.exceeds_200k_tokens // false')
+ctx_input=$(echo "$input"       | jq -r '.context_window.current_usage.input_tokens // ""')
 
 cost=$(echo "$input"            | jq -r '.cost.total_cost_usd // ""')
 total_dur_ms=$(echo "$input"    | jq -r '.cost.total_duration_ms // ""')
@@ -166,15 +166,17 @@ printf '%s%s%s%s%s\n' \
 
 # ── Line 2: Model, effort, version, session id ────────────────────────────────
 # Model  effort: auto  v2.1.87  id: <session-id>
-case "$effort" in
-  auto)   effort_color="$CYAN"             ;;
-  low)    effort_color="$GREEN"            ;;
-  medium) effort_color="$YELLOW"           ;;
-  high)   effort_color="$RED"              ;;
-  max)    effort_color="${BOLD}${RED}"     ;;
-  *)      effort_color="$WHITE"            ;;
+effort_lower=$(printf '%s' "$effort" | tr '[:upper:]' '[:lower:]')
+case "$effort_lower" in
+  auto)         effort_color="$CYAN"             ;;
+  low)          effort_color="$GREEN"            ;;
+  normal)       effort_color="${CYAN}"           ;;
+  medium)       effort_color="$YELLOW"           ;;
+  high)         effort_color="$RED"              ;;
+  max)          effort_color="${BOLD}${RED}"     ;;
+  *)            effort_color="$WHITE"            ;;
 esac
-effort_part="${DIV}${WHITE}effort: ${effort_color}${effort}${RESET}"
+effort_part="${DIV}${WHITE}effort: ${effort_color}${effort_lower}${RESET}"
 
 session_id_part=""
 [[ -n "$session_id" ]] && session_id_part="${DIV}${GREY}id: ${RESET}${session_id}"
@@ -197,8 +199,8 @@ if [[ -n "$ctx" ]]; then
   else
     ctx_part="${WHITE}context: ${color}$(printf '%.0f' "$ctx")%${RESET}"
   fi
-  [[ "$exceeds" = "true" ]] && ctx_part="${ctx_part} ${RED}${BOLD}⚠ exceeds 200k${RESET}"
-  if [[ "$ctx" =~ ^[0-9]+$ ]] && [[ "$ctx" -ge 80 ]]; then
+  ctx_int=$(printf '%.0f' "$ctx" 2>/dev/null)
+  if [[ "$ctx_int" =~ ^[0-9]+$ ]] && [[ "$ctx_int" -ge 85 ]]; then
     ctx_part="${ctx_part} ${BOLD}${RED}⚠ run /compact${RESET}"
   fi
 fi
@@ -206,6 +208,10 @@ fi
 out_part=""
 out_fmt=$(fmt_tokens "$ctx_out")
 [[ -n "$out_fmt" ]] && out_part="${WHITE}tokens out: ${BLUE}${out_fmt}${RESET}"
+
+input_part=""
+in_fmt=$(fmt_tokens "$ctx_input")
+[[ -n "$in_fmt" ]] && input_part="${WHITE}tokens in: ${BLUE}${in_fmt}${RESET}"
 
 cache_part=""
 cr_fmt=$(fmt_tokens "$ctx_cache_read")
@@ -232,6 +238,7 @@ fi
 line2_parts=()
 [[ -n "$ctx_part"   ]] && line2_parts+=("$ctx_part")
 [[ -n "$out_part"   ]] && line2_parts+=("$out_part")
+[[ -n "$input_part" ]] && line2_parts+=("$input_part")
 [[ -n "$cache_part" ]] && line2_parts+=("$cache_part")
 
 line2=""
@@ -247,7 +254,16 @@ if [[ -n "$cost" ]]; then
   [[ -n "$session_id" ]] && printf '%s' "$cost" > "${costs_dir}/${session_id//[^a-zA-Z0-9_-]/}"
   total_cost=$(awk '{s+=$1} END{printf "%.3f", s+0}' "${costs_dir}"/* 2>/dev/null)
   cost_part="${WHITE}cost: ${RESET}\$$(printf '%.3f' "$cost")"
-  [[ -n "$total_cost" ]] && cost_part="${cost_part} ${WHITE}(total: ${RESET}\$${total_cost}${WHITE})${RESET}"
+  if [[ -n "$total_cost" ]]; then
+    cost_since=""
+    oldest=$(ls -t "${costs_dir}"/* 2>/dev/null | tail -1)
+    [[ -n "$oldest" ]] && cost_since=$(date -r "$oldest" '+%b %d' 2>/dev/null)
+    if [[ -n "$cost_since" ]]; then
+      cost_part="${cost_part} ${WHITE}(total since ${GREY}${cost_since}${WHITE}: ${RESET}\$${total_cost}${WHITE})${RESET}"
+    else
+      cost_part="${cost_part} ${WHITE}(total: ${RESET}\$${total_cost}${WHITE})${RESET}"
+    fi
+  fi
 fi
 
 api_time_part=""

@@ -256,7 +256,11 @@ if [[ -n "$cost" ]]; then
   cost_part="${WHITE}cost: ${RESET}\$$(printf '%.3f' "$cost")"
   if [[ -n "$total_cost" ]]; then
     cost_since=""
-    oldest=$(ls -t "${costs_dir}"/* 2>/dev/null | tail -1)
+    oldest=""
+    for _f in "${costs_dir}"/*; do
+      [[ -f "$_f" ]] || continue
+      [[ -z "$oldest" ]] || [[ "$_f" -ot "$oldest" ]] && oldest="$_f"
+    done
     [[ -n "$oldest" ]] && cost_since=$(date -r "$oldest" '+%b %d' 2>/dev/null)
     if [[ -n "$cost_since" ]]; then
       cost_part="${cost_part} ${WHITE}(total since ${GREY}${cost_since}${WHITE}: ${RESET}\$${total_cost}${WHITE})${RESET}"

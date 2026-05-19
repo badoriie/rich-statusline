@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/badoriie/rich-statusline/compare/v1.0.5...v1.1.0) (2026-05-19)
+
+
+### Features
+
+* improve statusline with context warning, cost date, input tokens, and effort labels ([fc1b79c](https://github.com/badoriie/rich-statusline/commit/fc1b79c99066ece3814b7209f75b0e705e334428))
+
+
+### Bug Fixes
+
+* replace ls pipe with bash glob loop to find oldest cost file ([0e88491](https://github.com/badoriie/rich-statusline/commit/0e88491293345d190edbad4e744f9b7c956a1d52))
+
 ## [1.0.5](https://github.com/badoriie/rich-statusline/compare/v1.0.4...v1.0.5) (2026-04-25)
 
 

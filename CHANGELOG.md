@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/badoriie/rich-statusline/compare/v1.1.1...v1.2.0) (2026-05-19)
+
+
+### Features
+
+* fix effort label, add xhigh level, extra usage warning, cache savings date ([12abd0b](https://github.com/badoriie/rich-statusline/commit/12abd0b145f69366e34afedb264287ad8d99cf0e))
+
 ## [1.1.1](https://github.com/badoriie/rich-statusline/compare/v1.1.0...v1.1.1) (2026-05-19)
 
 

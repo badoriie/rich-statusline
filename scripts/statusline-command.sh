@@ -59,8 +59,11 @@ session_id=$(echo "$input"   | jq -r '.session_id // ""')
 model=$(echo "$input"        | jq -r '.model.display_name // ""')
 version=$(echo "$input"      | jq -r '.version // ""')
 output_style=$(echo "$input" | jq -r '.output_style.name // ""')
-effort=$(jq -r '.effortLevel // "auto"' "$HOME/.claude/settings.json" 2>/dev/null)
-[[ -z "$effort" ]] && effort="auto"
+effort=$(echo "$input" | jq -r '.effort.level // ""')
+if [[ -z "$effort" ]]; then
+  effort=$(jq -r '.effortLevel // "auto"' "$HOME/.claude/settings.json" 2>/dev/null)
+  [[ -z "$effort" ]] && effort="auto"
+fi
 
 ctx=$(echo "$input"          | jq -r '.context_window.used_percentage // ""')
 ctx_max=$(echo "$input"      | jq -r '.context_window.context_window_size // ""')
@@ -168,13 +171,14 @@ printf '%s%s%s%s%s\n' \
 # Model  effort: auto  v2.1.87  id: <session-id>
 effort_lower=$(printf '%s' "$effort" | tr '[:upper:]' '[:lower:]')
 case "$effort_lower" in
-  auto)         effort_color="$CYAN"             ;;
-  low)          effort_color="$GREEN"            ;;
-  normal)       effort_color="${CYAN}"           ;;
-  medium)       effort_color="$YELLOW"           ;;
-  high)         effort_color="$RED"              ;;
-  max)          effort_color="${BOLD}${RED}"     ;;
-  *)            effort_color="$WHITE"            ;;
+  auto)         effort_color="$CYAN"                    ;;
+  low)          effort_color="$GREEN"                   ;;
+  normal)       effort_color="$CYAN"                    ;;
+  medium)       effort_color="$YELLOW"                  ;;
+  high)         effort_color="$RED"                     ;;
+  xhigh)        effort_color="${BOLD}${RED}"            ;;
+  max)          effort_color="${BOLD}${MAGENTA}"        ;;
+  *)            effort_color="$WHITE"                   ;;
 esac
 effort_part="${DIV}${WHITE}effort: ${effort_color}${effort_lower}${RESET}"
 
@@ -227,7 +231,20 @@ if [[ -n "$cr_fmt" || -n "$cw_fmt" ]]; then
       [[ -n "$session_id" ]] && printf '%s' "$session_savings" > "${savings_dir}/${session_id//[^a-zA-Z0-9_-]/}"
       total_savings=$(awk '{s+=$1} END{printf "%.4f", s+0}' "${savings_dir}"/* 2>/dev/null)
       saved_str=" ${WHITE}saved: ${GREEN}\$$(printf '%.4f' "$session_savings")${RESET}"
-      [[ -n "$total_savings" ]] && saved_str="${saved_str} ${WHITE}(total: ${GREEN}\$${total_savings}${WHITE})${RESET}"
+      if [[ -n "$total_savings" ]]; then
+        savings_since=""
+        savings_oldest=""
+        for _sf in "${savings_dir}"/*; do
+          [[ -f "$_sf" ]] || continue
+          [[ -z "$savings_oldest" ]] || [[ "$_sf" -ot "$savings_oldest" ]] && savings_oldest="$_sf"
+        done
+        [[ -n "$savings_oldest" ]] && savings_since=$(date -r "$savings_oldest" '+%b %d' 2>/dev/null)
+        if [[ -n "$savings_since" ]]; then
+          saved_str="${saved_str} ${WHITE}(total since ${GREY}${savings_since}${WHITE}: ${GREEN}\$${total_savings}${WHITE})${RESET}"
+        else
+          saved_str="${saved_str} ${WHITE}(total: ${GREEN}\$${total_savings}${WHITE})${RESET}"
+        fi
+      fi
     fi
     cache_parts="${WHITE}cache hit: ${GREEN}${cr_fmt}${RESET}${saved_str}"
   fi
@@ -324,7 +341,13 @@ now_ts=$(date +%s)
 
 five_part=""
 if [[ -n "$five_pct" ]]; then
+  five_int=$(printf '%.0f' "$five_pct")
   color=$(pct_color "$five_pct")
+  extra_str=""
+  if [[ "$five_int" -gt 100 ]]; then
+    over=$(( five_int - 100 ))
+    extra_str=" ${BOLD}${RED}⚠ extra usage +${over}%${RESET}"
+  fi
   remaining_str=""
   if [[ "$five_reset" =~ ^[0-9]+$ ]]; then
     secs_left=$(( five_reset - now_ts ))
@@ -333,12 +356,18 @@ if [[ -n "$five_pct" ]]; then
       remaining_str=" ${WHITE}resets in ${RESET}$(fmt_remaining "$secs_left") (${exact})${RESET}"
     fi
   fi
-  five_part="${WHITE}5h limit: ${color}$(printf '%.0f' "$five_pct")%${RESET}${remaining_str}"
+  five_part="${WHITE}5h limit: ${color}${five_int}%${RESET}${extra_str}${remaining_str}"
 fi
 
 seven_part=""
 if [[ -n "$seven_pct" ]]; then
+  seven_int=$(printf '%.0f' "$seven_pct")
   color=$(pct_color "$seven_pct")
+  extra_str=""
+  if [[ "$seven_int" -gt 100 ]]; then
+    over=$(( seven_int - 100 ))
+    extra_str=" ${BOLD}${RED}⚠ extra usage +${over}%${RESET}"
+  fi
   remaining_str=""
   if [[ "$seven_reset" =~ ^[0-9]+$ ]]; then
     secs_left=$(( seven_reset - now_ts ))
@@ -347,7 +376,7 @@ if [[ -n "$seven_pct" ]]; then
       remaining_str=" ${WHITE}resets in ${RESET}$(fmt_remaining "$secs_left") (${exact})${RESET}"
     fi
   fi
-  seven_part="${WHITE}7d limit: ${color}$(printf '%.0f' "$seven_pct")%${RESET}${remaining_str}"
+  seven_part="${WHITE}7d limit: ${color}${seven_int}%${RESET}${extra_str}${remaining_str}"
 fi
 
 line4_parts=()

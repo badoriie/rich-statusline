@@ -84,7 +84,7 @@ seven_reset=$(echo "$input"  | jq -r '.rate_limits.seven_day.resets_at // ""')
 # Derive used tokens from percentage × window size
 ctx_used=""
 if [[ -n "$ctx" && -n "$ctx_max" ]] && [[ "$ctx_max" =~ ^[0-9]+$ ]]; then
-  ctx_used=$(awk "BEGIN{printf \"%d\", $ctx_max * $ctx / 100}")
+  ctx_used=$(awk -v max="$ctx_max" -v pct="$ctx" 'BEGIN{printf "%d", max * pct / 100}')
 fi
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,8 +106,8 @@ pct_color() {
 fmt_tokens() {
   local n="$1"
   [[ "$n" =~ ^[0-9]+$ ]] || return
-  if   [[ "$n" -ge 1000000 ]]; then awk "BEGIN{printf \"%.1fM\", $n/1000000}"
-  elif [[ "$n" -ge 1000 ]];    then awk "BEGIN{printf \"%.1fk\", $n/1000}"
+  if   [[ "$n" -ge 1000000 ]]; then awk -v n="$n" 'BEGIN{printf "%.1fM", n/1000000}'
+  elif [[ "$n" -ge 1000 ]];    then awk -v n="$n" 'BEGIN{printf "%.1fk", n/1000}'
   else                              printf '%d' "$n"
   fi
 }
@@ -221,7 +221,7 @@ if [[ -n "$cr_fmt" || -n "$cw_fmt" ]]; then
   if [[ -n "$cr_fmt" ]]; then
     saved_str=""
     if [[ "$ctx_cache_read" =~ ^[0-9]+$ ]]; then
-      session_savings=$(awk "BEGIN{printf \"%.6f\", $ctx_cache_read * 2.70 / 1000000}")
+      session_savings=$(awk -v tokens="$ctx_cache_read" 'BEGIN{printf "%.6f", tokens * 2.70 / 1000000}')
       savings_dir="$HOME/.claude/cache_savings"
       mkdir -p "$savings_dir"
       [[ -n "$session_id" ]] && printf '%s' "$session_savings" > "${savings_dir}/${session_id//[^a-zA-Z0-9_-]/}"

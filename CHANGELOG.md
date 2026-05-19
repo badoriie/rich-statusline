@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/badoriie/rich-statusline/compare/v1.1.0...v1.1.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* replace awk string interpolation with -v flag to prevent injection ([#10](https://github.com/badoriie/rich-statusline/issues/10)) ([75b53de](https://github.com/badoriie/rich-statusline/commit/75b53de41cc5462854ec28c8dff11660508cfbdb))
+
 ## [1.1.0](https://github.com/badoriie/rich-statusline/compare/v1.0.5...v1.1.0) (2026-05-19)
 
 
